@@ -9,6 +9,7 @@ numpy = "*"
 ipykernel = "*"
 sympy = "*"
 networkx = "*"
+pandas = "*"
 
 [dev-packages]
 

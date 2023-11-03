@@ -3,6 +3,7 @@ using LinearAlgebra
 using Random
 using Distributions
 using NLSolversBase
+using DelimitedFiles
 
 """ helper function to create pressure formulation initial guess from potential formulation """
 function _create_initial_guess(ss_pressure::SteadySimulator, 
@@ -42,12 +43,32 @@ function modify_data!(data::Dict{String,Any}, c_ratios::Dict)
     end 
 end 
 
+function write_results(results::Dict{Int,Any}, num_runs, outfile)
+    to_write_header = ["run_id", "iter_pi", "iter_p", "iter_p_with_pi", "R", "E", "sanity_check"] 
+    to_write = Array{Any,2}(undef, num_runs, 7)
+    for i in 1:num_runs 
+        result = results[i]
+        iter_pi = result["num_potential_iterations"]
+        iter_p = result["num_pressure_iterations"]
+        iter_p_with_pi = result["num_pressure_with_guess_iterations"]
+        R = result["R"]
+        E = result["relative_error"]
+        sanity_check = result["sanity_check_error"]
+        to_write[i, :] = [i, iter_pi, iter_p, iter_p_with_pi, R, E, sanity_check]
+    end 
+    open(outfile, "w") do io
+        writedlm(io, [permutedims(to_write_header); to_write], ',')
+    end
+end 
+
 function run(; num_samples = 1000)
-    folder = "../../data/GasLib-11/"
+    folder = "../../data/GasLib-40/"
     eos = :simple_cnga 
     Random.seed!(2022) 
-    
-    for _ in 1:num_samples
+    results = Dict{Int,Any}()
+
+    for i in 1:num_samples
+        results[i] = Dict{String,Any}()
         data = GasSteadySim._parse_data(folder)
         c_ratios = perturb_compressor_ratios!(data, 1.1, 1.4)
         modify_data!(data, c_ratios) 
@@ -61,6 +82,7 @@ function run(; num_samples = 1000)
         df_potential = prepare_for_solve!(ss_potential)
         solver_return_potential = run_simulator!(ss_potential, df_potential, show_trace_flag=false)
         num_potential_iterations = solver_return_potential.iterations  
+        results[i]["num_potential_iterations"] = num_potential_iterations
 
         # create and solve pressure formulation 
         data = GasSteadySim._parse_data(folder)
@@ -69,6 +91,7 @@ function run(; num_samples = 1000)
         df_pressure = prepare_for_solve!(ss_pressure)
         solver_return_pressure = run_simulator!(ss_pressure, df_pressure, show_trace_flag=false)
         num_pressure_iterations = solver_return_pressure.iterations  
+        results[i]["num_pressure_iterations"] = num_pressure_iterations
 
         # create guess from potential solution for pressure formulation and solve
         x_guess = _create_initial_guess(ss_pressure, ss_potential)
@@ -78,11 +101,15 @@ function run(; num_samples = 1000)
             df_pressure, x_guess = x_guess, show_trace_flag=false) 
         num_pressure_with_guess_iterations = solver_return_pressure_with_guess.iterations
         x = solver_return_pressure_with_guess.solution 
+        results[i]["num_pressure_with_guess_iterations"] = num_pressure_with_guess_iterations
 
         relative_error = norm(x - x_guess, Inf) / norm(x)
         err = solver_return_pressure.solution - solver_return_pressure_with_guess.solution
-        @show R_inf, relative_error, norm(err)
+        results[i]["R"] = R_inf
+        results[i]["relative_error"] = relative_error 
+        results[i]["sanity_check_error"] = norm(err)
     end 
 
+    write_results(results, num_samples, "../../data/GasLib-40-runs.csv")
 end 
 
