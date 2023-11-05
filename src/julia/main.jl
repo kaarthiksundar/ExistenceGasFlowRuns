@@ -27,7 +27,6 @@ end
 function perturb_compressor_ratios!(data::Dict{String,Any}, lb::Float64, ub::Float64)
     c_ratios = Dict()
     for (id, compressor) in get(data, "boundary_compressor", [])
-        (compressor["value"] == 1.0) && (c_ratios[id] = 1.0; continue)
         if (lb == ub)
             c_ratios[id] = lb 
         else 
@@ -70,7 +69,7 @@ function run(; num_samples = 1000)
     for i in 1:num_samples
         results[i] = Dict{String,Any}()
         data = GasSteadySim._parse_data(folder)
-        c_ratios = perturb_compressor_ratios!(data, 1.1, 1.4)
+        c_ratios = perturb_compressor_ratios!(data, 1.0, 2.0)
         modify_data!(data, c_ratios) 
 
         # create and solve the potential formulation
