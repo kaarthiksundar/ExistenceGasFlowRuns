@@ -109,6 +109,6 @@ function run(; num_samples = 1000)
         results[i]["sanity_check_error"] = norm(err)
     end 
 
-    write_results(results, num_samples, "../../data/GasLib-40-runs.csv")
+    write_results(results, num_samples, "../../data/runs/GasLib-40-runs.csv")
 end 
 
