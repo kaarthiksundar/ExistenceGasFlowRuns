@@ -129,21 +129,21 @@ class Controller:
         plt.contourf(xx, yy, zz1.astype(float), 
                      locator=ticker.LogLocator(), cmap='inferno')
         plt.colorbar()
-        plt.ylabel(r'$\alpha$', rotation='horizontal', ha='right')
-        plt.xlabel(r'$p\; (\mathrm{MPa})$')
+        ax.set_ylabel(r'$\alpha$', rotation='horizontal', ha='right')
+        ax.set_xlabel(r'$p\; (\mathrm{MPa})$')
         plt.clim(vmin=1e-7, vmax=1)
         fig.tight_layout()
         fig.set_size_inches(5, 4)
         plt.savefig(f'{self.config.folder}opt_gamma.pdf')
         crop(f'{self.config.folder}opt_gamma')
-
+    
         zz2 = rel_err(xx, yy, [0,0, 1.0, 0])
 
         fig, ax = plt.subplots()
         plt.contourf(xx, yy, zz2, locator=ticker.LogLocator(), cmap='inferno')
         plt.colorbar()
-        plt.ylabel(r'$\alpha$', rotation='horizontal', ha='right')
-        plt.xlabel(r'$p\; (\mathrm{MPa})$')
+        ax.set_ylabel(r'$\alpha$', rotation='horizontal', ha='right')
+        ax.set_xlabel(r'$p\; (\mathrm{MPa})$')
         plt.clim(vmin=1e-7, vmax=1)
         fig.tight_layout()
         fig.set_size_inches(5, 4)

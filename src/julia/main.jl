@@ -112,3 +112,34 @@ function run(; num_samples = 1000)
     write_results(results, num_samples, "../../data/runs/GasLib-40-runs.csv")
 end 
 
+function run_control_illustration() 
+    folder = "../../data/GasLib-40/"
+    eos = :ideal
+    pmin = GasSteadySim.psi_to_pascal(300.0)
+    scaling = 1.0 
+    failed = false
+
+    while failed == false
+        @info "scaling = $scaling"
+        data = GasSteadySim._parse_data(folder)
+        for (i, val) in data["boundary_nonslack_flow"] 
+            data["boundary_nonslack_flow"][i] = val * scaling
+        end
+        ss = initialize_simulator(data, eos = eos, 
+            use_potential_formulation = true) 
+        nd_pmin = pmin/nominal_values(ss, :pressure)
+        df= prepare_for_solve!(ss)
+        solver_return = run_simulator!(ss, df, show_trace_flag=false)
+        
+        for (_, val) in ss.ref[:node]
+            p = val["pressure"]
+            if isnan(p) || p - nd_pmin < 1e-6
+                @info "p_min constraint violation detected"
+                failed = true 
+                @info "failed scaling = $scaling"
+                break 
+            end 
+        end  
+        scaling += 0.025
+    end 
+end 
